@@ -42,7 +42,7 @@ jobs:
           aws s3 sync ./dist s3://${{ secrets.AWS_S3_BUCKET }} --delete
         # ⬆️ use ./build instead of ./dist if you're using Create React App (CRA)
 
-      # Step 6: Invalidate CloudFront Cache
+      # Step 6: Invalidate CloudFront Cachee
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
