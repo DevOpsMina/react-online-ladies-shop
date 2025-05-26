@@ -1,52 +1,45 @@
-name: Build and Deploy to ECS
-
+name: Deploy Vite Project to S3
 on:
   push:
     branches:
-      - main
-
+      - sandeep  # Trigger on pushes to the main branch
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
+      # Step 1: Checkout code from the repository
       - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/checkout@v3
+      # Step 2: Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: "20"
-
-      - name: Login to Amazon ECR
+          node-version: '16'  # Specify your desired Node.js version
+      # Step 3: Install dependencies and build the project
+      - name: Install dependencies and build the project
+        run: |
+          npm install vite --save-dev --legacy-peer-deps
+          npx vite build
+      # Step 4: Configure AWS credentials using GitHub secrets
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      # Step 5: Sync the build files to S3 bucket
+      - name: Sync build files to S3
+        run: |
+          aws s3 sync ./dist s3://${{ secrets.AWS_S3_BUCKET }} --delete
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-southeast-1
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+      # Step 6: Invalidate CloudFront Cache
+      - name: Invalidate CloudFront Cache
         run: |
-          aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com
-
-
-      - name: Build Docker image
-        run: |
-          docker build -t tuesday-repo .
-
-      - name: Tag Docker image
-        run: |
-          docker tag tuesday-repo:latest 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/tuesday-repo:latest
-
-      - name: Push Docker image to Amazon ECR
+          aws cloudfront create-invalidation --distribution-id E14TYSPJU0MYJ9 --paths "/index.html"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-southeast-1
-        run: |
-          docker push 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/tuesday-repo:latest
-
-      - name: Deploy Docker image to ECS
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-southeast-1
-        run: |
-          aws ecs update-service --cluster tuesday-cluster --service tuesday-service --force-new-deployment
+          AWS_REGION: ${{ secrets.AWS_REGION }}
