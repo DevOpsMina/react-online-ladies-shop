@@ -14,17 +14,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js environment
+      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '18'  # Use LTS version to avoid OpenSSL issues
 
       # Step 3: Install dependencies and build the app
       - name: Install dependencies and build
         run: |
           npm ci
           npm run build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider  # Fix for OpenSSL error
 
       # Step 4: Configure AWS credentials
       - name: Configure AWS Credentials
@@ -34,15 +36,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 5: Sync built files to S3 bucket
+      # Step 5: Upload to S3 (change ./dist to ./build if using Create React App)
       - name: Deploy to S3
         run: |
           aws s3 sync ./dist s3://${{ secrets.AWS_S3_BUCKET }} --delete
-        # Use ./build if you're using Create React App instead of Vite
+        # ⬆️ use ./build instead of ./dist if you're using Create React App (CRA)
 
-      # Step 6: Invalidate CloudFront cache
+      # Step 6: Invalidate CloudFront Cache
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id E14TYSPJU0MYJ9 \  # Replace with your actual distribution ID
+            --distribution-id E14TYSPJU0MYJ9 \  # 🔁 Replace with your actual CloudFront ID
             --paths "/*"
