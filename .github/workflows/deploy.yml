@@ -20,8 +20,8 @@ jobs:
 
       - name: Install dependencies and build the project
         run: |
-          npm install --legacy-peer-deps
-          npx vite build
+          npm install
+          npm rub build
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
