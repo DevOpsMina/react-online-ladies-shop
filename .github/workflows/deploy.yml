@@ -1,34 +1,34 @@
-name: Deploy React App to S3 and CloudFront
+name: Deploy Vite Project to S3
 
 on:
   push:
     branches:
-      - main
+      - main # Trigger on pushes to the 'sandeep' branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout source code
+      # Step 1: Checkout code from the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
+      # Step 2: Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'  # Use LTS version to avoid OpenSSL issues
+          node-version: '16'  # Or use '18' if your project needs newer features
 
-      # Step 3: Install dependencies and build the app
-      - name: Install dependencies and build
+      # Step 3: Install dependencies and build the project
+      - name: Install dependencies and build the project
         run: |
           npm ci
           npm run build
         env:
           NODE_OPTIONS: --openssl-legacy-provider  # Fix for OpenSSL error
 
-      # Step 4: Configure AWS credentials
+      # Step 4: Configure AWS credentials using GitHub secrets
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -36,15 +36,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 5: Upload to S3 (change ./dist to ./build if using Create React App)
-      - name: Deploy to S3
+      # Step 5: Sync the build files to S3 bucket
+      - name: Sync build files to S3
         run: |
           aws s3 sync ./build s3://${{ secrets.AWS_S3_BUCKET }} --delete
-        # ⬆️ use ./build instead of ./dist if you're using Create React App (CRA)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
 
-      # Step 6: Invalidate CloudFront Cachee
+      # Step 6: Invalidate CloudFront Cache
       - name: Invalidate CloudFront Cache
         run: |
-          aws cloudfront create-invalidation \
-            --distribution-id E14TYSPJU0MYJ9 \  # 🔁 Replace with your actual CloudFront ID
-            --paths "/*"
+          aws cloudfront create-invalidation --distribution-id E14TYSPJU0MYJ9 --paths "/index.html"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
