@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
-import logo from "../womancode.svg";
+// import logo from "../wo.svg";
 import styled from "styled-components";
 import { ButtonContainer } from "./Button";
 import "./navbar.scss";
@@ -16,11 +16,11 @@ export default class Navbar extends Component {
       <div className="header">
         <NavWrapper className="navbar navbar-expand-expand-sm navbar-dark px-sm-5">
           <Link to="/" className="nav-link">
-            <img
+            {/* <img
               src={logo}
               alt="store"
               style={{ width: "50px", fill: "white", height: "50px" }}
-            />
+            /> */}
           </Link>
 
           <Link to="/cart" className="ml-auto">
