@@ -21,7 +21,7 @@ npm run build
 
 
 🛠️ Deployment (CI/CD)
-Automatic deployment is set up via GitHub Actions on push to the sandeep branch.
+Automatic deployment is set up via GitHub Actions on push to the main branch.
 
 Ensure the following secrets are configured in your GitHub repository:
 
